@@ -62,7 +62,7 @@ public:
 template <typename T1, typename T2>
 T2& Avl_tree<T1,T2>::operator[](const T1& input_key) {
 	insert(input_key);
-	return ;
+	return find(input_key)->value;
 }
 
 // указатель на первый элемент
@@ -180,24 +180,9 @@ std::shared_ptr<node<T1,T2>> Avl_tree<T1, T2>::find(std::shared_ptr<node<T1,T2>>
 		p->left = find(p->left, input_key);
 	else if( input_key > p->key )
 		p->right = find(p->right, input_key);
-	else {
-		return p;
-	}
+	return p;
 }
 
-
-
-// вставка ключа со значением
-template <typename T1, typename T2>
-void Avl_tree<T1, T2>::insert(const T1& input_key, const T2& input_value) {
-	if (root != nullptr) {	// если по данному адресу уже лежит объект, то запустим рекурсивную вставку
-		root = insert(input_key, input_value, root);
-	}
-	else {	// если в дереве нет корн€, то создадим его
-		//выдел€ем пам€ть дл€ нового узла с данными параметрами и передаем указатель на эту пам€ть в root
-		root = std::make_shared<node<T1,T2>>(input_key, input_value);
-	}
-}
 
 // вставка ключа без значени€
 template <typename T1, typename T2>

@@ -7,7 +7,7 @@
 template <class T1, class T2>
 struct node {	// структура для представления узла дерева
 	const T1 key;	//ключ типа T2
-	const T2 value;	//значение типа T2
+	T2 value;	//значение типа T2
 	std::shared_ptr<node<T1,T2>> left;	//указатель на левого потомка
 	std::shared_ptr<node<T1,T2>> right;	//указатель на правого потомка
 	unsigned int height;	//высота поддерева с корнем в данном узле

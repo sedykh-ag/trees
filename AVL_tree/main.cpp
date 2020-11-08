@@ -34,6 +34,9 @@ int main() {
 	else {
 		cout << "tree is not empty" << endl;
 	}
-
+	tr.insert(50, "word-50");
+	cout << "find 50: " << tr.find(50)->value << endl;
+	tr[40] = "word-40";
+	cout << "find 40: " << tr.find(40)->value << endl;
 	return 0;
 }
