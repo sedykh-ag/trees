@@ -8,12 +8,12 @@ using namespace std;
 
 int main() {
 	// инициализация дерева
-	Avl_tree <int, string> tr {{50, "word-50"}, {9, "word-9"}, {10, "word-10"}, {20,"word-20"},
+	Avl_tree <int, string> tr {{50, "word-50"}, {50, "word-50x"}, {10, "word-10"}, {20,"word-20"},
 	 {14, "word-14"}, {15,"word-15"}, {30, "word-30"} , {35,"word-35"} , {40, "word-40"}};
-	// печать дерева
+	// print дерева
 	cout<<"Tree:" << endl;
 	tr.print();
-	cout <<"tree count is: " << tr.count() << endl;
+	cout <<"tree size is: " << tr.size() << endl;
 	if (tr.empty()) {
 		cout << "tree is empty" << endl;
 	}
@@ -25,9 +25,9 @@ int main() {
 	cout<<"Erase 14:" << endl;
 	tr.erase(14);
 	tr.print();
-
+	cout << "Clear Tree:" << endl;
 	tr.clear();
-	cout <<"tree count is: " << tr.count() << endl;
+	cout <<"tree size is: " << tr.size() << endl;
 	if (tr.empty()) {
 		cout << "tree is empty" << endl;
 	}
@@ -38,5 +38,8 @@ int main() {
 	cout << "find 50: " << tr.find(50)->value << endl;
 	tr[40] = "word-40";
 	cout << "find 40: " << tr.find(40)->value << endl;
+	cout<<"Tree:" << endl;
+	tr.print();
+
 	return 0;
 }
