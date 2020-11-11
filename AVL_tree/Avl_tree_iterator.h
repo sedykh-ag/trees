@@ -49,8 +49,8 @@ private:
 			return find_min(p->right);
 		}
     }
-	PtrType find_min(PtrType p) const { return p->left ? find_min(p->left) : p; }	// search for the minimum key of a given node
-	PtrType find_max(PtrType p) const { return p->right ? find_max(p->right) : p; }	// search for the maximum key of a given node
+	PtrType find_min(PtrType p) const { return p->left ? find_min(p->left) : p; }
+	PtrType find_max(PtrType p) const { return p->right ? find_max(p->right) : p; }
 	PtrType end() { return find_max((*tr).root); }
 
 };
