@@ -2,10 +2,10 @@
 #define AVL_TREE_H
 
 #include "node.h"
-#include "Avl_tree_iterator.h"
 
 #include<memory>
 #include<iostream>
+#include"Avl_tree_iterator.h"
 #include <initializer_list>
 
 
@@ -15,8 +15,9 @@ class Avl_tree {
 public:
 	typedef std::shared_ptr<node<KeyType,ValueType>> node_ptr_t;
 	typedef Avl_tree_iterator<KeyType,ValueType,node_ptr_t> iterator;
-    typedef Avl_tree_iterator<const KeyType, const ValueType, const node_ptr_t> const_iterator;
-
+	typedef Avl_tree_iterator<const KeyType, const ValueType, const node_ptr_t> const_iterator;
+	friend class Avl_tree_iterator<KeyType,ValueType,node_ptr_t>;
+	Avl_tree* parent_class = this;
 private:
 	//variables
 	node_ptr_t root;
@@ -40,6 +41,8 @@ private:
 	node_ptr_t balance(node_ptr_t p); // балансировка узла p
 	node_ptr_t remove_min(node_ptr_t p); // перемещение минимального элемента
 	node_ptr_t erase(node_ptr_t p, const KeyType& input_key);	//рекурсивное delete значени€ key
+	node_ptr_t next_node (node_ptr_t p);
+	node_ptr_t prev_node (node_ptr_t p);
 
 public:
 	// variables
@@ -49,8 +52,6 @@ public:
 	// const
 	iterator begin();	// iterator to begin
 	iterator end();	// iterator to end
-	const_iterator begin() const;	// const iterator to begin
-	const_iterator end() const;	// const iterator to end
 	bool empty() const;	// наличие элементов в массиве
 	unsigned int size() const;	//количество элементов в массиве
 	void print() const; // print массива
@@ -68,6 +69,7 @@ public:
 	void clear() {root = nullptr;} // очистка дерева
 	void erase(const KeyType& input_key);	// delete key
 	ValueType& operator[](const KeyType& input_key);	// перегрузка оператора []
+
 };
 
 // перегрузка оператора []
@@ -80,25 +82,15 @@ ValueType& Avl_tree<KeyType,ValueType>::operator[](const KeyType& input_key) {
 // iterator to begin
 template <typename KeyType, typename ValueType>
 typename Avl_tree<KeyType, ValueType>::iterator Avl_tree<KeyType, ValueType>::begin() {
-	return typename Avl_tree<KeyType, ValueType>::iterator(find_min().get());
+	return typename Avl_tree<KeyType, ValueType>::iterator(find_min(root), parent_class);
 }
+
 // iterator to end
 template <typename KeyType, typename ValueType>
 typename Avl_tree<KeyType, ValueType>::iterator Avl_tree<KeyType, ValueType>::end() {
-	return typename Avl_tree<KeyType, ValueType>::iterator((find_max()->right).get());
+	return typename Avl_tree<KeyType, ValueType>::iterator(find_max(root), parent_class);
 }
 
-// const iterator to begin
-template <typename KeyType, typename ValueType>
-typename Avl_tree<KeyType, ValueType>::const_iterator Avl_tree<KeyType, ValueType>::begin() const {
-	return typename Avl_tree<KeyType, ValueType>::const_iterator(find_min().get());
-}
-
-// const iterator to end
-template <typename KeyType, typename ValueType>
-typename Avl_tree<KeyType, ValueType>::const_iterator Avl_tree<KeyType, ValueType>::end() const {
-	return typename Avl_tree<KeyType, ValueType>::const_iterator((find_max()->right).get());
-}
 
 //наличие элементов в дереве
 template <typename KeyType, typename ValueType>
@@ -149,6 +141,10 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::
 	node_ptr_t q(p->left);
 	p->left = q->right;
 	q->right = p;
+
+	(q->right)->parent = p;
+	q->parent = p->parent;
+	p->parent = q;
 	fixheight(p);
 	fixheight(q);
 	return q;
@@ -160,6 +156,10 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::
 	node_ptr_t p(q->right);
 	q->right = p->left;
 	p->left = q;
+
+	p->parent = q->parent;
+	(p->left)->parent = q;
+	q->parent = p;
 	fixheight(q);
 	fixheight(p);
 	return p;
@@ -206,22 +206,22 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::
 // insert key без значени€
 template <typename KeyType, typename ValueType>
 void Avl_tree<KeyType, ValueType>::insert(const KeyType& input_key) {
-	root = (root == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key) : insert(input_key, root);
+	root = (root == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key, nullptr) : insert(input_key, root);
 }
 
 // insert key со значением
 template <typename KeyType, typename ValueType>
 void Avl_tree<KeyType, ValueType>::insert(const KeyType& input_key, const ValueType& input_value) {
-	root = (root == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key, input_value) : insert(input_key, input_value, root);
+	root = (root == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key, input_value, nullptr) : insert(input_key, input_value, root);
 }
 
 //recursive insert key без значени€
 template <typename KeyType, typename ValueType>
 typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::insert(const KeyType& input_key, node_ptr_t leaf) {
 	if (input_key < leaf->key)
-		leaf->left  = (leaf->left  == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key) : insert(input_key, leaf->left );
+		leaf->left  = (leaf->left  == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key, leaf) : insert(input_key, leaf->left );
 	else if (input_key > leaf->key)
-		leaf->right = (leaf->right == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key) : insert(input_key, leaf->right);
+		leaf->right = (leaf->right == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key, leaf) : insert(input_key, leaf->right);
 
 	return  balance(leaf);
 }
@@ -230,9 +230,9 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::
 template <typename KeyType, typename ValueType>
 typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::insert(const KeyType& input_key, const ValueType& input_value, node_ptr_t leaf) {
 	if (input_key < leaf->key)
-		leaf->left  = (leaf->left  == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key, input_value) : insert(input_key, input_value, leaf->left );
+		leaf->left  = (leaf->left  == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key, input_value, leaf) : insert(input_key, input_value, leaf->left);
 	else if (input_key > leaf->key)
-		leaf->right = (leaf->right == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key, input_value) : insert(input_key, input_value, leaf->right);
+		leaf->right = (leaf->right == nullptr) ? std::make_shared<node<KeyType,ValueType>>(input_key, input_value, leaf) : insert(input_key, input_value, leaf->right);
 	else if (input_key == leaf->key)
 		leaf->value = input_value;
 	return  balance(leaf);
@@ -247,7 +247,10 @@ void Avl_tree<KeyType,ValueType>::erase(const KeyType& input_key) {
 //delete узла с минимальным ключом из поддерева p
 template <typename KeyType, typename ValueType>
 typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType,ValueType>::remove_min(node_ptr_t p) {
-	if(p->left == nullptr) return p->right;
+	if(p->left == nullptr) {
+		if (p->right != nullptr) (p->right)->parent = p->parent;
+		return p->right;
+	}
 	p->left = remove_min(p->left);
 	return balance(p);
 }
@@ -263,13 +266,46 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType,ValueType>::e
 	else {
 		node_ptr_t q(p->left);
 		node_ptr_t r(p->right);
-		if(!r) return q;
-		node_ptr_t min = find_min(r);
+		if(!r) {
+			q->parent = p->parent;
+			return q;
+		}
+		node_ptr_t min(find_min(r));
 		min->right = remove_min(r);
 		min->left = q;
+		q->parent = min;
+		(min->right)->parent = min;
+		min->parent = p->parent;
 		return balance(min);
 	}
 	return balance(p);
 }
+
+//next node
+template <typename KeyType, typename ValueType>
+typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::next_node (node_ptr_t p){
+	if (p == end()) return p;
+	if (p->parent != nullptr) {
+		if (p == (p->parent)->left) {
+			if ((p->parent)->right != nullptr) return find_min((p->parent)->right);
+			else return p->parent;
+		}
+		else {
+			if (p->right == nullptr) return find_min(((p->parent)->parent)->right);
+			else return find_min(p->right);
+		}
+	}
+	else {
+		return find_min(p->right);
+	}
+}
+
+/*
+//prev node
+template <typename KeyType, typename ValueType>
+typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::prev_node (node_ptr_t p){
+
+}
+*/
 
 #endif // AVL_TREE_H
