@@ -16,12 +16,12 @@ int main() {
 	cout <<"tree size is: " << tr.size() << endl;
 	if (tr.empty()) cout << "tree is empty" << endl;
 	else cout << "tree is not empty" << endl;
+	cout<< "Printing our tree with iterators:" << endl;
 	for (auto i = tr.begin(); i != tr.end(); ++i) {
 		cout << i->key << " ";
 	}
     cout << endl;
-	/*
-	// удаление элемента по ключу
+	//удаление элемента по ключу
 	cout<<"Erase 50:" << endl;
 	tr.erase(50);
 	tr.print();
@@ -40,6 +40,6 @@ int main() {
 	cout << "find 40: " << tr.find(40)->value << endl;
 	cout<<"Tree:" << endl;
 	tr.print();
-	*/
+
 	return 0;
 }
