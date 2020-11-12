@@ -4,7 +4,7 @@
 #include <cmath>
 
 #include "../AVL_tree/Avl_tree.h"
-#include "../RB_tree/Rb_tree.cpp"
+#include "../RB_tree/rb_tree.cpp"
 
 
 double get_time()
@@ -15,7 +15,7 @@ double get_time()
 int main() {
 
     Avl_tree<int, int> test_AVL_tree;
-    RBTree<int> test_RB_tree;
+    RBTree<int, int> test_RB_tree;
 
     double time, start, finish;
 
@@ -39,7 +39,7 @@ int main() {
                     //Choose one:
 
                     //test_AVL_tree.insert(i);
-                    //test_RB_tree.insert(i);
+                    //test_RB_tree.insert(i, i);
                 }
             }
             start = get_time();
@@ -50,9 +50,9 @@ int main() {
                 //test_AVL_tree.find(i % 10);
                 //test_AVL_tree.erase(i);
 
-                //test_RB_tree.insert(i);
+                //test_RB_tree.insert(i, i);
                 //test_RB_tree.find(i);
-                //test_RB_tree.remove(i);
+                //test_RB_tree.erase(i);
             }
             finish = get_time();
             time = finish - start;

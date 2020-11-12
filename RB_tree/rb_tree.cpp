@@ -5,28 +5,29 @@ using namespace std;
 
 enum RBTColor { Black, Red };
 
-template<class KeyType>
+template<class KeyType, class T>
 struct  RBTNode
 {
 	KeyType key;
+	T value;
 	RBTColor color;
-	RBTNode<KeyType>* left;
-	RBTNode<KeyType>* right;
-	RBTNode<KeyType>* parent;
-	RBTNode(KeyType _key, RBTColor _color, RBTNode* _parent, RBTNode* _left, RBTNode* _right) :
-		key(_key), color(_color), parent(_parent), left(_left), right(_right) { };
+	RBTNode<KeyType, T>* left;
+	RBTNode<KeyType, T>* right;
+	RBTNode<KeyType, T>* parent;
+	RBTNode(KeyType _key, T _value, RBTColor _color, RBTNode* _parent, RBTNode* _left, RBTNode* _right) :
+		key(_key), value(_value), color(_color), parent(_parent), left(_left), right(_right) { };
 };
 
-template<class KeyType>
+template<class KeyType, class T>
 class  RBTree
 {
 private:
-	RBTNode<KeyType>* root;
+	RBTNode<KeyType, T>* root;
 
 private:
 
-	void left_turn(RBTNode<KeyType>*& root, RBTNode<KeyType>* node) {
-		RBTNode<KeyType>* pivot = node->right;
+	void left_turn(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
+		RBTNode<KeyType, T>* pivot = node->right;
 		node->right = pivot->left;
 		if (pivot->left)
 			pivot->left->parent = node;
@@ -43,8 +44,8 @@ private:
 		pivot->left = node;
 		node->parent = pivot;
 	}
-	void right_turn(RBTNode<KeyType>*& root, RBTNode<KeyType>* node) {
-		RBTNode<KeyType>* pivot = node->left;
+	void right_turn(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
+		RBTNode<KeyType, T>* pivot = node->left;
 		node->left = pivot->right;
 		if (pivot->right)
 			pivot->right->parent = node;
@@ -61,9 +62,9 @@ private:
 		node->parent = pivot;
 	}
 
-	void insert(RBTNode<KeyType>*& root, RBTNode<KeyType>* node) {
-		RBTNode<KeyType>* tmp = root;
-		RBTNode<KeyType>* tmp_parent = NULL;
+	void insert(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
+		RBTNode<KeyType, T>* tmp = root;
+		RBTNode<KeyType, T>* tmp_parent = NULL;
 
 		while (tmp) {
 			tmp_parent = tmp;
@@ -83,15 +84,15 @@ private:
 		node->color = Red;
 		fix_insertion(root, node);
 	}
-	void fix_insertion(RBTNode<KeyType>*& root, RBTNode<KeyType>* node) {
-		RBTNode<KeyType>* parent;
+	void fix_insertion(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
+		RBTNode<KeyType, T>* parent;
 		parent = node->parent;
 		while (node != RBTree::root && parent->color == Red) {
-			RBTNode<KeyType>* grandparent = parent->parent;
+			RBTNode<KeyType, T>* grandparent = parent->parent;
 
 			if (grandparent->left == parent) {
 				// отец - левый ребёнок
-				RBTNode<KeyType>* uncle = grandparent->right;
+				RBTNode<KeyType, T>* uncle = grandparent->right;
 
 				if (uncle && uncle->color == Red) {
 					// случай, когда есть дядя
@@ -115,7 +116,7 @@ private:
 			}
 			else {
 				// отец - правый ребенок
-				RBTNode<KeyType>* uncle = grandparent->left;
+				RBTNode<KeyType, T>* uncle = grandparent->left;
 
 				if (uncle && uncle->color == Red) {
 					// случай, когда есть дядя
@@ -141,13 +142,13 @@ private:
 		root->color = Black; // восстанавливаем корень
 	}
 
-	void remove(RBTNode<KeyType>*& root, RBTNode<KeyType>* node) {
-		RBTNode<KeyType>* child, *parent;
+	void remove(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
+		RBTNode<KeyType, T>* child, *parent;
 		RBTColor color;
 
 		//Узел слева и справа от удаленного узла не является конечным
 		if (node->left && node->right) {
-			RBTNode<KeyType>* replace = node;
+			RBTNode<KeyType, T>* replace = node;
 
 			// Ищем узел-преемник
 			replace = node->right;
@@ -216,8 +217,8 @@ private:
 			fix_deleting(root, child, parent);
 		delete node;
 	}
-	void fix_deleting(RBTNode<KeyType>*& root, RBTNode<KeyType>* node, RBTNode<KeyType>* parent) {
-		RBTNode<KeyType>* brother;
+	void fix_deleting(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node, RBTNode<KeyType, T>* parent) {
+		RBTNode<KeyType, T>* brother;
 		while ((!node) || node->color == Black && node != RBTree::root) {
 			if (parent->left == node) {
 				brother = parent->right;
@@ -275,22 +276,22 @@ private:
 			node->color = Black;
 	}
 
-	void destory(RBTNode<KeyType>*& node) {
+	void destroy(RBTNode<KeyType, T>*& node) {
 		if (node) {
-			destory(node->left);
-			destory(node->right);
+			destroy(node->left);
+			destroy(node->right);
 			delete node;
 			node = nullptr;
 		}
 	}
-	RBTNode<KeyType>* find(RBTNode<KeyType>* node, KeyType key) const {
+	RBTNode<KeyType, T>* find(RBTNode<KeyType, T>* node, KeyType key) const {
 		if ((!node) || node->key == key)
 			return node;
 		else
 			return key > node->key ? find(node->right, key) : find(node->left, key);
 	}
 
-	void print(RBTNode<KeyType>* node) const {
+	void print(RBTNode<KeyType, T>* node) const {
 		if (node) {
 			if (!node->parent)
 				cout << node->key << '[' << node->color << "]	--	root" << endl;
@@ -306,19 +307,19 @@ private:
 
 public:
 	RBTree() : root(nullptr) {}
-	~RBTree() { destory(root); }
+	~RBTree() { destroy(root); }
 
-	void insert(KeyType key) {
-		insert(root, new RBTNode<KeyType>(key, Red, NULL, NULL, NULL));
+	void insert(KeyType key, T value) {
+		insert(root, new RBTNode<KeyType, T>(key, value, Red, NULL, NULL, NULL));
 	}
 
-	void remove(KeyType key) {
-		RBTNode<KeyType>* deletenode = find(root, key);
+	void erase(KeyType key) {
+		RBTNode<KeyType, T>* deletenode = find(root, key);
 		if (deletenode)
 			remove(root, deletenode);
 	}
 
-	RBTNode<KeyType>* find(KeyType key) { return find(root, key); }
+	RBTNode<KeyType, T>* find(KeyType key) { return find(root, key); }
 
 	void print() {
 		if (!root)
@@ -328,5 +329,16 @@ public:
 	}
 
 };
+/*
+// TESTING
+int main() {
+    RBTree<int, int> t;
+    t.insert(5, 5);
+    t.insert(6, 6);
+    t.insert(-1, -1);
+    RBTNode<int, int>* f = t.find(5);
+    cout << f->value << '\n';
+    t.print();
 
-
+}
+*/
