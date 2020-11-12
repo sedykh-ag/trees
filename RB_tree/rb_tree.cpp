@@ -329,13 +329,4 @@ public:
 
 };
 
-// TESTING
-int main() {
-    RBTree<int> t;
-    t.insert(5);
-    t.insert(1);
-    t.insert(10);
-    RBTNode<int>* ptr = t.find(10);
-    cout << ptr->key;
 
-}

@@ -2,6 +2,8 @@
 #define AVL_TREE_ITERATOR_H
 
 #include <initializer_list>
+#include <vector>
+
 #include"Avl_tree.h"
 
 template<typename KeyType, typename ValueType>
@@ -13,46 +15,68 @@ class Avl_tree_iterator: public std::iterator<std::input_iterator_tag, PtrType>
 {
     friend class Avl_tree<KeyType,ValueType>;
 private:
-    Avl_tree_iterator(PtrType p, Avl_tree<KeyType,ValueType>* t) : p(p), tr(t) {}
+    Avl_tree_iterator(PtrType p, Avl_tree<KeyType,ValueType>* t) : p(p), tr(t) {
+    	set_parents((*tr).root);
+		set_row((*tr).root);
+		auto tmp = find_max((*tr).root)->right;
+		if (tmp == p) index = row.size();
+		row.push_back(tmp);
+
+	}
 
 public:
-    Avl_tree_iterator(const Avl_tree_iterator &it) : p(it.p) {}
+    Avl_tree_iterator(const Avl_tree_iterator &it) : p(it.p) {
+		set_parents((*tr).root);
+		set_row((*tr).root);
+		auto tmp = find_max((*tr).root)->right;
+		if (tmp == p) index = row.size();
+		row.push_back(tmp);
+	}
     bool operator!=(Avl_tree_iterator const& other) const { return p != other.p; }
-    bool operator==(Avl_tree_iterator const& other) const { return p == other.p; } //need for BOOST_FOREACH
+    bool operator==(Avl_tree_iterator const& other) const { return p == other.p; }
     typename Avl_tree_iterator::reference operator*() const { return *p; }
     typename Avl_tree_iterator::reference operator->() { return p; }
     Avl_tree_iterator& operator++() {
-		p = next_node(p);
+		p = row[index + 1];
+        ++index;
+		return *this;
+    }
+    Avl_tree_iterator& operator--() {
+		p = row[index - 1];
+        --index;
 		return *this;
     }
 
 private:
     PtrType p;
+    std::vector<PtrType> row;
+    unsigned int index;
     Avl_tree<KeyType,ValueType>* tr;
-    PtrType next_node (PtrType p) {
-		if (p == end()) return p;
-        if (p->right != nullptr) {
-            return find_min(p->right);
-        }
-		if (p->parent.lock() != nullptr) {
-			if (p == ((p->parent).lock())->left) {
-				return (p->parent).lock();
-			}
-			else {
-				if (p->right == nullptr) {
-                    return  (((p->parent).lock())->parent).lock();
-                }
-				else return find_min(p->right);
-			}
-		}
-		else {
-			return find_min(p->right);
-		}
+    void set_row(PtrType t ) {
+    	if (t) {
+			set_row(t->left);
+			if (t == p) index = row.size();
+			row.push_back(t);
+			set_row(t->right);
+    	}
     }
+    void set_parents(PtrType p) {
+		if (p == (*tr).root) {
+			PtrType tmp = nullptr;
+			((*tr).root)->parent = tmp;
+		}
+		if (p->left) {
+			(p->left)->parent = p;
+			set_parents(p->left);
+		}
+		if (p->right) {
+			(p->right)->parent = p;
+			set_parents(p->right);
+		}
+	}
 	PtrType find_min(PtrType p) const { return p->left ? find_min(p->left) : p; }
 	PtrType find_max(PtrType p) const { return p->right ? find_max(p->right) : p; }
-	PtrType end() { return find_max((*tr).root); }
-
+	PtrType end() { return (find_max((*tr).root))->right; }
 };
 
 #endif

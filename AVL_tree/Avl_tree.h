@@ -22,11 +22,12 @@ public:
 
 	friend class Avl_tree_iterator<KeyType,ValueType,node_ptr_t>;
 
-	Avl_tree* parent_class = this;
-
 private:
 	//variables
+	//tree root
 	node_ptr_t root;
+	//pointer to this tree
+	Avl_tree* parent_class = this;
 
 	// functions
 	// const
@@ -60,6 +61,8 @@ private:
 	node_ptr_t remove_min(node_ptr_t p);
 	//delete key
 	node_ptr_t erase(node_ptr_t p, const KeyType& input_key);
+	// set parents
+	void set_parents(node_ptr_t p);
 
 public:
 	// variables
@@ -75,8 +78,7 @@ public:
 	bool empty() const;
 	// count of nodes
 	unsigned int size() const;
-	// print tree
-	void print() const;
+
 	// search of key
 	node_ptr_t find(const KeyType& input_key) const;
 
@@ -99,6 +101,8 @@ public:
 	void erase(const KeyType& input_key);
 	//operator[] overload
 	ValueType& operator[](const KeyType& input_key);
+	// print tree
+	void print();
 
 };
 
@@ -118,7 +122,8 @@ typename Avl_tree<KeyType, ValueType>::iterator Avl_tree<KeyType, ValueType>::be
 // iterator to end
 template <typename KeyType, typename ValueType>
 typename Avl_tree<KeyType, ValueType>::iterator Avl_tree<KeyType, ValueType>::end() {
-	return typename Avl_tree<KeyType, ValueType>::iterator(find_max(root), parent_class);
+	if (root) return typename Avl_tree<KeyType, ValueType>::iterator((find_max(root))->right, parent_class);
+	else return begin();
 }
 
 //empty check
@@ -135,8 +140,9 @@ unsigned int Avl_tree<KeyType, ValueType>::size() const {
 
 //print tree
 template <typename KeyType, typename ValueType>
-void Avl_tree<KeyType, ValueType>::print() const {
+void Avl_tree<KeyType, ValueType>::print() {
 	std::cout << std::endl;
+	set_parents(root);
 	if (!empty()) print(root, 0);
 	else std::cout<< "Tree is empty";
 	std::cout << std::endl;
@@ -148,8 +154,26 @@ void Avl_tree<KeyType, ValueType>::print(node_ptr_t p, int level) const {
 	if (p) {
 		print(p->right, level + 1);
 		for (int i = 0; i < level; i++) std::cout << "  ";
-		std::cout << p->key << ";" << p->children << std::endl;
+		if((p->parent).lock()) std::cout << p->key << ";" << ((p->parent).lock())->key << std::endl;
+		else std::cout << p->key << ";" << "n" << std::endl;
 		print(p->left, level+1);
+	}
+}
+
+//set parents
+template <typename KeyType, typename ValueType>
+void Avl_tree<KeyType, ValueType>::set_parents(node_ptr_t p) {
+	if (p == root) {
+		node_ptr_t tmp = nullptr;
+		root->parent = tmp;
+	}
+	if (p->left) {
+		(p->left)->parent = p;
+		set_parents(p->left);
+	}
+	if (p->right) {
+		(p->right)->parent = p;
+		set_parents(p->right);
 	}
 }
 
@@ -170,9 +194,6 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::
 	node_ptr_t q(p->left);
 	p->left = q->right;
 	q->right = p;
-
-	(q->right)->parent = p;
-	q->parent = p->parent;
 	p->parent = q;
 	fixheight(p);
 	fixheight(q);
@@ -185,10 +206,6 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::
 	node_ptr_t p(q->right);
 	q->right = p->left;
 	p->left = q;
-
-	p->parent = q->parent;
-	(p->left)->parent = q;
-	q->parent = p;
 	fixheight(q);
 	fixheight(p);
 	return p;
@@ -269,17 +286,12 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::
 
 // delete key with value
 template <typename KeyType, typename ValueType>
-void Avl_tree<KeyType,ValueType>::erase(const KeyType& input_key) {
-	root = erase(root, input_key);
-}
+void Avl_tree<KeyType,ValueType>::erase(const KeyType& input_key) { root = erase(root, input_key); }
 
 //delete removing the minimum node from p
 template <typename KeyType, typename ValueType>
 typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType,ValueType>::remove_min(node_ptr_t p) {
-	if(p->left == nullptr) {
-		if (p->right != nullptr) (p->right)->parent = p->parent;
-		return p->right;
-	}
+	if(p->left == nullptr) return p->right;
 	p->left = remove_min(p->left);
 	return balance(p);
 }
@@ -295,16 +307,10 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType,ValueType>::e
 	else {
 		node_ptr_t q(p->left);
 		node_ptr_t r(p->right);
-		if(!r) {
-			q->parent = p->parent;
-			return q;
-		}
+		if(!r) return q;
 		node_ptr_t min(find_min(r));
 		min->right = remove_min(r);
 		min->left = q;
-		q->parent = min;
-		(min->right)->parent = min;
-		min->parent = p->parent;
 		return balance(min);
 	}
 	return balance(p);
