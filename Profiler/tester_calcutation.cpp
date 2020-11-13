@@ -19,7 +19,7 @@ int main() {
 
     double time, start, finish;
 
-    int rep = 100;
+    int rep = 100; // количество измерений
     int max_N = 1000000;
     int pow;
     int N;
@@ -29,25 +29,24 @@ int main() {
         N = 0;
 
         test_AVL_tree.clear();
-        for (int i = 0; i < pow; i++){
-                test_AVL_tree.insert(i);
-            }
 
         for (int j = 0; j < 100; j++){
-            if(j > 9){
-                for (int i = pow * j + rep * j; i < pow * (j+1) + rep * j; i++){
-                    //Choose one:
 
-                    //test_AVL_tree.insert(i);
-                    //test_RB_tree.insert(i, i);
-                }
+            // заполнение дерева
+            for (int i = pow * j + rep * j; i < pow * (j+1) + rep * j; i++){
+                //Choose one:
+
+                test_AVL_tree.insert(i, i);
+                //test_RB_tree.insert(i, i);
             }
+
+            // измерение времени метода
             start = get_time();
             for (int i = pow * (j+1) + rep * j; i < (pow + rep) * (j + 1); i++){
                 //Choose one:
 
-                //test_AVL_tree.insert(i);
-                //test_AVL_tree.find(i % 10);
+                //test_AVL_tree.insert(i, i);
+                test_AVL_tree.find(i % 10);
                 //test_AVL_tree.erase(i);
 
                 //test_RB_tree.insert(i, i);
@@ -57,7 +56,7 @@ int main() {
             finish = get_time();
             time = finish - start;
             N += pow;
-            std::cout << N <<", " << time << std::endl;
+            std::cout << N <<", " << time << "\n";
         }
     }
 }
