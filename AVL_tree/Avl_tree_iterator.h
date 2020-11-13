@@ -5,6 +5,7 @@
 #include <vector>
 
 #include"Avl_tree.h"
+#include"node.h"
 
 template<typename KeyType, typename ValueType>
 class Avl_tree;
@@ -37,19 +38,19 @@ public:
     typename Avl_tree_iterator::reference operator*() const { return *p; }
     typename Avl_tree_iterator::reference operator->() { return p; }
     Avl_tree_iterator& operator++() {
-		p = row[index + 1];
+		p = (row[index + 1]).lock();
         ++index;
 		return *this;
     }
     Avl_tree_iterator& operator--() {
-		p = row[index - 1];
+		p = (row[index - 1]).lock();
         --index;
 		return *this;
     }
 
 private:
     PtrType p;
-    std::vector<PtrType> row;
+    std::vector<std::weak_ptr<node<KeyType,ValueType>>> row;
     unsigned int index;
     Avl_tree<KeyType,ValueType>* tr;
     void set_row(PtrType t ) {
@@ -74,7 +75,6 @@ private:
 			set_parents(p->right);
 		}
 	}
-	PtrType find_min(PtrType p) const { return p->left ? find_min(p->left) : p; }
 	PtrType find_max(PtrType p) const { return p->right ? find_max(p->right) : p; }
 	PtrType end() { return (find_max((*tr).root))->right; }
 };

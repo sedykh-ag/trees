@@ -241,10 +241,8 @@ typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::
 template <typename KeyType, typename ValueType>
 typename Avl_tree<KeyType, ValueType>::node_ptr_t Avl_tree<KeyType, ValueType>::find(node_ptr_t p, const KeyType& input_key) const {
 	if(!p) return nullptr;
-	if( input_key < p->key )
-		p->left = find(p->left, input_key);
-	else if( input_key > p->key )
-		p->right = find(p->right, input_key);
+	if( input_key < p->key ) return find(p->left, input_key);
+	else if( input_key > p->key ) return find(p->right, input_key);
 	return p;
 }
 

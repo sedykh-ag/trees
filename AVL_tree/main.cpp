@@ -19,6 +19,7 @@ int main() {
 	cout <<"tree size is: " << tr.size() << endl;
 	if (tr.empty()) cout << "tree is empty" << endl;
 	else cout << "tree is not empty" << endl;
+
 	cout<< "Printing our tree with iterators:" << endl;
 	for (auto i = tr.begin(); i != tr.end(); ++i) {
 		cout << i->key << " ";
@@ -29,7 +30,9 @@ int main() {
 	for (i; i != tr.begin(); --i) {
 		cout << i->key << " ";
 	}
-	cout << (tr.begin())->key << endl;
+	cout <<(tr.begin())->key << endl;
+
+
 	cout<<endl<<"Erase 50:" << endl;
 	tr.erase(50);
 	tr.print();
@@ -42,12 +45,10 @@ int main() {
 	else {
 		cout << "tree is not empty" << endl;
 	}
-	tr.insert(50, "word-50");
-	cout << "find 50: " << tr.find(50)->value << endl;
+	tr.insert(50);
 	tr[40] = "word-40";
-	cout << "find 40: " << tr.find(40)->value << endl;
-	cout<<"Tree:" << endl;
 	tr.print();
+	tr.clear();
 
 	return 0;
 }
