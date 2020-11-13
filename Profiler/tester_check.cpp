@@ -11,8 +11,6 @@ int main() {
 
     int max_N = 100000;
 
-    bool avl_find = true, rb_find = true;
-
     // --- Testing AVL-tree
     for (int i = 0; i <= max_N; i++){
         test_AVL_tree.insert(i, i);
@@ -40,9 +38,10 @@ int main() {
         test_AVL_tree.find(i);
     }
     std::cout << "RB-tree find test was passed" << "\n";
-
+/*
     for (int i = 0; i <= max_N; i++){
         test_RB_tree.erase(i);
     }
     std::cout << "RB-tree erase test passed" << "\n";
+*/
 }
