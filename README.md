@@ -4,6 +4,10 @@
 
 ![insert](https://github.com/sedykh-ag/trees/blob/main/Presentation/AVL_tree_slide.jpg)
 
+## Красно-черное дерево
+
+![insert](https://github.com/sedykh-ag/trees/blob/main/Presentation/rb_tree_slide.png)
+
 ## Профайлер
 
 В ходе тестирования измерялась зависимость времени вставки(insert), поиска(find) и удаления(erase) от количества элементов в дереве N. Предполагаемая асимптотика - O(log N), что было подтверждено в пределах погрешности результатами измерений и их линейной апроксимацией.
