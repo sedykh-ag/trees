@@ -1,344 +1,443 @@
-// #pragma once
 #include <iostream>
+#include <memory>
+#include <utility>
+#include <algorithm>
 
-using namespace std;
 
-enum RBTColor { Black, Red };
-
-template<class KeyType, class T>
-struct  RBTNode
-{
-	KeyType key;
-	T value;
-	RBTColor color;
-	RBTNode<KeyType, T>* left;
-	RBTNode<KeyType, T>* right;
-	RBTNode<KeyType, T>* parent;
-	RBTNode(KeyType _key, T _value, RBTColor _color, RBTNode* _parent, RBTNode* _left, RBTNode* _right) :
-		key(_key), value(_value), color(_color), parent(_parent), left(_left), right(_right) { };
+enum class Color {
+    Red,
+    Black
 };
 
-template<class KeyType, class T>
-class  RBTree
-{
-private:
-	RBTNode<KeyType, T>* root;
+template <typename T, typename V>
+struct Node {
+    T key;
+    V value;
+    Color color;
+    std::unique_ptr<Node<T, V>> left;
+    std::unique_ptr<Node<T, V>> right;
+    Node<T, V>* parent;
+
+    Node(const T& key, const V& val) : key {key}, value {val}, color {Color::Red}, parent {nullptr} {}
+};
+
+template <typename T, typename V>
+struct RBTree {
+public:
+    std::unique_ptr<Node<T, V>> root;
 
 private:
+    void LeftRotate(std::unique_ptr<Node<T, V>>&& x) {
+        auto y = std::move(x->right);
+        x->right = std::move(y->left);
+        if (x->right) {
+            x->right->parent = x.get();
+        }
+        y->parent = x->parent;
+        auto xp = x->parent;
+        if (!xp) {
+            auto px = x.release();
+            root = std::move(y);
+            root->left = std::unique_ptr<Node<T, V>>(px);
+            root->left->parent = root.get();
+        } else if (x == xp->left) {
+            auto px = x.release();
+            xp->left = std::move(y);
+            xp->left->left = std::unique_ptr<Node<T, V>>(px);
+            xp->left->left->parent = xp->left.get();
+        } else {
+            auto px = x.release();
+            xp->right = std::move(y);
+            xp->right->left = std::unique_ptr<Node<T, V>>(px);
+            xp->right->left->parent = xp->right.get();
+        }
+    }
 
-	void left_turn(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
-		RBTNode<KeyType, T>* pivot = node->right;
-		node->right = pivot->left;
-		if (pivot->left)
-			pivot->left->parent = node;
-
-		pivot->parent = node->parent;
-		if (!node->parent)
-			root = pivot;
-		else {
-			if (node == node->parent->left)
-				node->parent->left = pivot;
-			else
-				node->parent->right = pivot;
-		}
-		pivot->left = node;
-		node->parent = pivot;
-	}
-	void right_turn(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
-		RBTNode<KeyType, T>* pivot = node->left;
-		node->left = pivot->right;
-		if (pivot->right)
-			pivot->right->parent = node;
-
-		pivot->parent = node->parent;
-		if (!node->parent)
-			root = pivot;
-		else
-			if (node == node->parent->right)
-				node->parent->right = pivot;
-			else
-				node->parent->left = pivot;
-		pivot->right = node;
-		node->parent = pivot;
-	}
-
-	void insert(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
-		RBTNode<KeyType, T>* tmp = root;
-		RBTNode<KeyType, T>* tmp_parent = NULL;
-
-		while (tmp) {
-			tmp_parent = tmp;
-			if (node->key > tmp->key)
-				tmp = tmp->right;
-			else
-				tmp = tmp->left;
-		}
-		node->parent = tmp_parent;
-		if (tmp_parent)
-			if (node->key > tmp_parent->key)
-				tmp_parent->right = node;
-			else
-				tmp_parent->left = node;
-		else
-			root = node;
-		node->color = Red;
-		fix_insertion(root, node);
-	}
-	void fix_insertion(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
-		RBTNode<KeyType, T>* parent;
-		parent = node->parent;
-		while (node != RBTree::root && parent->color == Red) {
-			RBTNode<KeyType, T>* grandparent = parent->parent;
-
-			if (grandparent->left == parent) {
-				// отец - левый ребёнок
-				RBTNode<KeyType, T>* uncle = grandparent->right;
-
-				if (uncle && uncle->color == Red) {
-					// случай, когда есть дядя
-					parent->color = Black;
-					uncle->color = Black;
-					grandparent->color = Red;
-					node = grandparent;
-					parent = node->parent;
-				}
-				else {
-					// случай, когда нет дяди
-					if (parent->right == node) {
-						left_turn(root, parent);
-						swap(node, parent);
-					}
-					right_turn(root, grandparent);
-					grandparent->color = Red;
-					parent->color = Black;
-					break;
-				}
-			}
-			else {
-				// отец - правый ребенок
-				RBTNode<KeyType, T>* uncle = grandparent->left;
-
-				if (uncle && uncle->color == Red) {
-					// случай, когда есть дядя
-					grandparent->color = Red;
-					parent->color = Black;
-					uncle->color = Black;
-					node = grandparent;
-					parent = node->parent;
-				}
-				else {
-					// случай, когда нет дяди
-					if (parent->left == node) {
-						right_turn(root, parent);
-						swap(parent, node);
-					}
-					left_turn(root, grandparent);
-					parent->color = Black;
-					grandparent->color = Red;
-					break;
-				}
-			}
-		}
-		root->color = Black; // восстанавливаем корень
-	}
-
-	void remove(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node) {
-		RBTNode<KeyType, T>* child, *parent;
-		RBTColor color;
-
-		//Узел слева и справа от удаленного узла не является конечным
-		if (node->left && node->right) {
-			RBTNode<KeyType, T>* replace = node;
-
-			// Ищем узел-преемник
-			replace = node->right;
-			while (replace->left)
-				replace = replace->left;
-
-			// Удаляемый узел не является корневым узлом
-			if (node->parent)
-				if (node->parent->left == node)
-					node->parent->left = replace;
-				else
-					node->parent->right = replace;
-			// Удаляемый узел является корневым узлом
-			else
-				root = replace;
-
-			child = replace->right;
-			parent = replace->parent;
-			color = replace->color;
-
-			// Узел заменяется родительским узлом
-			if (parent == node)
-				parent = replace;
-			else {
-				// Дочерний узел существует
-				if (child)
-					child->parent = parent;
-				parent->left = child;
-				replace->right = node->right;
-				node->right->parent = replace;
-			}
-			replace->parent = node->parent;
-			replace->color = node->color;
-			replace->left = node->left;
-			node->left->parent = replace;
-			// При удалении черной вершины могла быть нарушена балансировка
-			if (color == Black)
-				fix_deleting(root, child, parent);
-			delete node;
-			return;
-		}
-		// Когда удаляемый узел имеет только левый/правый
-		if (node->left)
-			child = node->left;
-		else
-			child = node->right;
-
-		parent = node->parent;
-		color = node->color;
-		if (child)
-			child->parent = parent;
-
-		// Удаляемый узел не является корневым узлом
-		if (parent)
-			if (node == parent->left)
-				parent->left = child;
-			else
-				parent->right = child;
-
-		// Удаляемый узел является корневым узлом
-		else
-			RBTree::root = child;
-
-		// При удалении черной вершины могла быть нарушена балансировка
-		if (color == Black)
-			fix_deleting(root, child, parent);
-		delete node;
-	}
-	void fix_deleting(RBTNode<KeyType, T>*& root, RBTNode<KeyType, T>* node, RBTNode<KeyType, T>* parent) {
-		RBTNode<KeyType, T>* brother;
-		while ((!node) || node->color == Black && node != RBTree::root) {
-			if (parent->left == node) {
-				brother = parent->right;
-				if (brother->color == Red) {
-					brother->color = Black;
-					parent->color = Red;
-					left_turn(root, parent);
-					brother = parent->right;
-				}
-				else {
-					if (!(brother->right) || brother->right->color == Black) {
-						brother->left->color = Black;
-						brother->color = Red;
-						right_turn(root, brother);
-						brother = parent->right;
-					}
-					brother->color = parent->color;
-					parent->color = Black;
-					brother->right->color = Black;
-					left_turn(root, parent);
-					node = root;
-					break;
-				}
-			}
-			else {
-				brother = parent->left;
-				if (brother->color == Red) {
-					brother->color = Black;
-					parent->color = Red;
-					right_turn(root, parent);
-					brother = parent->left;
-				}
-				if ((!brother->left || brother->left->color == Black) && (!brother->right || brother->right->color == Black)) {
-					brother->color = Red;
-					node = parent;
-					parent = node->parent;
-				}
-				else {
-					if (!(brother->left) || brother->left->color == Black) {
-						brother->right->color = Black;
-						brother->color = Red;
-						left_turn(root, brother);
-						brother = parent->left;
-					}
-					brother->color = parent->color;
-					parent->color = Black;
-					brother->left->color = Black;
-					right_turn(root, parent);
-					node = root;
-					break;
-				}
-			}
-		}
-		if (node)
-			node->color = Black;
-	}
-
-	void destroy(RBTNode<KeyType, T>*& node) {
-		if (node) {
-			destroy(node->left);
-			destroy(node->right);
-			delete node;
-			node = nullptr;
-		}
-	}
-	RBTNode<KeyType, T>* find(RBTNode<KeyType, T>* node, KeyType key) const {
-		if ((!node) || node->key == key)
-			return node;
-		else
-			return key > node->key ? find(node->right, key) : find(node->left, key);
-	}
-
-	void print(RBTNode<KeyType, T>* node) const {
-		if (node) {
-			if (!node->parent)
-				cout << node->key << '[' << node->color << "]	--	root" << endl;
-			else if (node->parent->left == node)
-				cout << node->key << '[' << node->color << "]	--	" << node->parent->key << "'s " << "left child" << endl;
-			else
-				cout << node->key << '[' << node->color << "]	--	" << node->parent->key << "'s " << "right child" << endl;
-			print(node->left);
-			print(node->right);
-		}
-	}
-
+    void RightRotate(std::unique_ptr<Node<T, V>>&& x) {
+        auto y = std::move(x->left);
+        x->left = std::move(y->right);
+        if (x->left) {
+            x->left->parent = x.get();
+        }
+        y->parent = x->parent;
+        auto xp = x->parent;
+        if (!xp) {
+            auto px = x.release();
+            root = std::move(y);
+            root->right = std::unique_ptr<Node<T, V>>(px);
+            root->right->parent = root.get();
+        } else if (x == xp->left) {
+            auto px = x.release();
+            xp->left = std::move(y);
+            xp->left->right = std::unique_ptr<Node<T, V>>(px);
+            xp->left->right->parent = xp->left.get();
+        } else {
+            auto px = x.release();
+            xp->right = std::move(y);
+            xp->right->right = std::unique_ptr<Node<T, V>>(px);
+            xp->right->right->parent = xp->right.get();
+        }
+    }
 
 public:
-	RBTree() : root(nullptr) {}
-	~RBTree() { destroy(root); }
+    /*
+        find
+        РџСЂРёРЅРёРјР°РµС‚: РєР»СЋС‡
+        РёС‰РµС‚ СѓР·РµР» РїРѕ РєР»СЋС‡Сѓ
+        Р’РѕР·РІСЂР°С‰Р°РµС‚: СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РЅР°Р№РґРµРЅРЅС‹Р№ СѓР·РµР»
+    */
+    Node<T, V>* find(const T& key) {
+        return Search(root.get(), key);
+    }
 
-	void insert(KeyType key, T value) {
-		insert(root, new RBTNode<KeyType, T>(key, value, Red, NULL, NULL, NULL));
-	}
+    /*
+        insert
+        РџСЂРёРЅРёРјР°РµС‚: (РєР»СЋС‡, Р·РЅР°С‡РµРЅРёРµ)
+        РІСЃС‚Р°РІР»СЏРµС‚ СѓР·РµР» (РєР»СЋС‡, Р·РЅР°С‡РµРЅРёРµ)
+        Р’РѕР·РІСЂР°С‰Р°РµС‚: void
 
-	void erase(KeyType key) {
-		RBTNode<KeyType, T>* deletenode = find(root, key);
-		if (deletenode)
-			remove(root, deletenode);
-	}
+    */
+    void insert(std::pair<T, V> p) {
+    //void insert(const T& key, const V& val) {
+        auto z = std::make_unique<Node<T, V>>(p.first, p.second);
+        Insert(std::move(z));
+    }
 
-	RBTNode<KeyType, T>* find(KeyType key) { return find(root, key); }
+    /*
+        erase
+        РџСЂРёРЅРёРјР°РµС‚: РєР»СЋС‡
+        РїСЂРѕРІРѕРґРёС‚ СѓРґР°Р»РµРЅРёРµ СѓР·Р»Р° РїРѕ РєР»СЋС‡Сѓ
+        Р’РѕР·РІСЂР°С‰Р°РµС‚: 0  РµСЃР»Рё СѓСЃРїРµС€РЅРѕ
+                    -1 РµСЃР»Рё С‚Р°РєРѕРіРѕ СѓР·Р»Р° РЅРµС‚
+    */
+    int erase(const T& key) {
+        auto z = Search(root.get(), key);
+        return Delete(z);
+    }
 
-	void print() {
-		if (!root)
-			cout << "Empty tree" << '\n';
-		else
-			print(root);
-	}
+private:
+    Node<T, V>* Search(Node<T, V>* x, const T& key) {
+        if (!x || x->key == key) {
+            return x;
+        }
+        if (key < x->key) {
+            return Search(x->left.get(), key);
+        } else {
+            return Search(x->right.get(), key);
+        }
+    }
+
+    void Insert(std::unique_ptr<Node<T, V>> z) {
+        Node<T, V>* y = nullptr;
+        Node<T, V>* x = root.get();
+        while (x) {
+            y = x;
+            if (z->key < x->key) {
+                x = x->left.get();
+            } else {
+                x = x->right.get();
+            }
+        }
+        z->parent = y;
+        if (!y) {
+            root = std::move(z);
+            InsertFixup(std::move(root));
+        } else if (z->key < y->key) {
+            y->left = std::move(z);
+            InsertFixup(std::move(y->left));
+        } else {
+            y->right = std::move(z);
+            InsertFixup(std::move(y->right));
+        }
+    }
+
+    void InsertFixup(std::unique_ptr<Node<T, V>>&& z) {
+        auto zp = z->parent;
+        while (zp && zp->color == Color::Red) {
+            auto zpp = zp->parent;
+            if (zp == zpp->left.get()) {
+                auto y = zpp->right.get();
+                if (y && y->color == Color::Red) {
+                    zp->color = Color::Black;
+                    y->color = Color::Black;
+                    zpp->color = Color::Red;
+                    zp = zpp->parent;
+                } else {
+                    if (z == zp->right) {
+                        LeftRotate(std::move(zpp->left));
+                        zp = zpp->left.get();
+                    }
+                    zp->color = Color::Black;
+                    zpp->color = Color::Red;
+                    auto zppp = zpp->parent;
+                    if (!zppp) {
+                        RightRotate(std::move(root));
+                    } else if (zpp == zppp->left.get()) {
+                        RightRotate(std::move(zppp->left));
+                    } else {
+                        RightRotate(std::move(zppp->right));
+                    }
+                }
+            } else {
+                auto y = zpp->left.get();
+                if (y && y->color == Color::Red) {
+                    zp->color = Color::Black;
+                    y->color = Color::Black;
+                    zpp->color = Color::Red;
+                    zp = zpp->parent;
+                } else {
+                    if (z == zp->left) {
+                        RightRotate(std::move(zpp->right));
+                        zp = zpp->right.get();
+                    }
+                    zp->color = Color::Black;
+                    zpp->color = Color::Red;
+                    auto zppp = zpp->parent;
+                    if (!zppp) {
+                        LeftRotate(std::move(root));
+                    } else if (zpp == zppp->left.get()) {
+                        LeftRotate(std::move(zppp->left));
+                    } else {
+                        LeftRotate(std::move(zppp->right));
+                    }
+                }
+            }
+        }
+        root->color = Color::Black;
+    }
+
+    Node<T, V>* Transplant(Node<T, V>* u, std::unique_ptr<Node<T, V>>&& v) {
+        if (v) {
+            v->parent = u->parent;
+        }
+        Node<T, V>* w = nullptr;
+        if (!u->parent) {
+            w = root.release();
+            root = std::move(v);
+        } else if (u == u->parent->left.get()) {
+            w = u->parent->left.release();
+            u->parent->left = std::move(v);
+        } else {
+            w = u->parent->right.release();
+            u->parent->right = std::move(v);
+        }
+        return w;
+    }
+
+    Node<T, V>* Minimum(Node<T, V>* x) {
+        if (!x) {
+            return x;
+        }
+        while (x->left) {
+            x = x->left.get();
+        }
+        return x;
+    }
+
+    int Delete(Node<T, V>* z) {
+        if (!z) {
+            return -1;
+        }
+        Color orig_color = z->color;
+        Node<T, V>* x = nullptr;
+        Node<T, V>* xp = nullptr;
+        if (!z->left) {
+            x = z->right.get();
+            xp = z->parent;
+            auto pz = Transplant(z, std::move(z->right));
+            auto upz = std::unique_ptr<Node<T, V>>(pz);
+        } else if (!z->right) {
+            x = z->left.get();
+            xp = z->parent;
+            auto pz = Transplant(z, std::move(z->left));
+            auto upz = std::unique_ptr<Node<T, V>>(pz);
+        } else {
+            auto y = Minimum(z->right.get());
+            orig_color = y->color;
+            x = y->right.get();
+            xp = y;
+            if (y->parent == z) {
+                if (x) {
+                    x->parent = y;
+                }
+                auto pz = Transplant(z, std::move(z->right));
+                y->left = std::move(pz->left);
+                y->left->parent = y;
+                y->color = pz->color;
+                auto upz = std::unique_ptr<Node<T, V>>(pz);
+            } else {
+                xp = y->parent;
+                auto py = Transplant(y, std::move(y->right));
+                py->right = std::move(z->right);
+                py->right->parent = py;
+                auto upy = std::unique_ptr<Node<T, V>>(py);
+                auto pz = Transplant(z, std::move(upy));
+                py->left = std::move(pz->left);
+                py->left->parent = py;
+                py->color = pz->color;
+                auto upz = std::unique_ptr<Node<T, V>>(pz);
+            }
+        }
+        if (orig_color == Color::Black) {
+            DeleteFixup(x, xp);
+        }
+
+        return 0;
+    }
+
+    void DeleteFixup(Node<T, V>* x, Node<T, V>* xp) {
+        while (x != root.get() && (!x || x->color == Color::Black)) {
+            if (x == xp->left.get()) {
+                Node<T, V>* w = xp->right.get();
+                if (w && w->color == Color::Red) {
+                    w->color = Color::Black;
+                    xp->color = Color::Red;
+                    auto xpp = xp->parent;
+                    if (!xpp) {
+                        LeftRotate(std::move(root));
+                    } else if (xp == xpp->left.get()) {
+                        LeftRotate(std::move(xpp->left));
+                    } else {
+                        LeftRotate(std::move(xpp->right));
+                    }
+                    w = xp->right.get();
+                }
+                if (w && (!w->left || w->left->color == Color::Black)
+                    && (!w->right || w->right->color == Color::Black)) {
+                    w->color = Color::Red;
+                    x = xp;
+                    xp = xp->parent;
+                } else if (w) {
+                    if (!w->right || w->right->color == Color::Black) {
+                        w->left->color = Color::Black;
+                        w->color = Color::Red;
+                        auto wp = w->parent;
+                        if (!wp) {
+                            RightRotate(std::move(root));
+                        } else if (w == wp->left.get()) {
+                            RightRotate(std::move(wp->left));
+                        } else {
+                            RightRotate(std::move(wp->right));
+                        }
+                        w = xp->right.get();
+                    }
+                    w->color = xp->color;
+                    xp->color = Color::Black;
+                    w->right->color = Color::Black;
+                    auto xpp = xp->parent;
+                    if (!xpp) {
+                        LeftRotate(std::move(root));
+                    } else if (xp == xpp->left.get()) {
+                        LeftRotate(std::move(xpp->left));
+                    } else {
+                        LeftRotate(std::move(xpp->right));
+                    }
+                    x = root.get();
+                } else {
+                    x = root.get();
+                }
+            } else {
+                Node<T, V>* w = xp->left.get();
+                if (w && w->color == Color::Red) {
+                    w->color = Color::Black;
+                    xp->color = Color::Red;
+                    auto xpp = xp->parent;
+                    if (!xpp) {
+                        RightRotate(std::move(root));
+                    } else if (xp == xpp->left.get()) {
+                        RightRotate(std::move(xpp->left));
+                    } else {
+                        RightRotate(std::move(xpp->right));
+                    }
+                    w = xp->left.get();
+                }
+                if (w && (!w->left || w->left->color == Color::Black)
+                    && (!w->right || w->right->color == Color::Black)) {
+                    w->color = Color::Red;
+                    x = xp;
+                    xp = xp->parent;
+                } else if (w) {
+                    if (!w->left || w->left->color == Color::Black) {
+                        w->right->color = Color::Black;
+                        w->color = Color::Red;
+                        auto wp = w->parent;
+                        if (!wp) {
+                            LeftRotate(std::move(root));
+                        } else if (w == wp->left.get()) {
+                            LeftRotate(std::move(wp->left));
+                        } else {
+                            LeftRotate(std::move(wp->right));
+                        }
+                        w = xp->left.get();
+                    }
+                    w->color = xp->color;
+                    xp->color = Color::Black;
+                    w->left->color = Color::Black;
+                    auto xpp = xp->parent;
+                    if (!xpp) {
+                        RightRotate(std::move(root));
+                    } else if (xp == xpp->left.get()) {
+                        RightRotate(std::move(xpp->left));
+                    } else {
+                        RightRotate(std::move(xpp->right));
+                    }
+                    x = root.get();
+                } else {
+                    x = root.get();
+                }
+            }
+        }
+        if (x) {
+            x->color = Color::Black;
+        }
+    }
 
 };
-/*
-// TESTING
-int main() {
-    RBTree<int, int> t;
-    t.insert(5, 5);
-    t.insert(6, 6);
-    t.insert(-1, -1);
-    RBTNode<int, int>* f = t.find(5);
-    cout << f->value << '\n';
-    t.print();
 
+// РњРѕР¶РЅРѕ СЂР°СЃРїРµС‡Р°С‚Р°С‚СЊ СѓР·РµР» СЃ РµРіРѕ РїРѕС‚РѕРјРєР°РјРё РІ РёРЅС„РёРєСЃРЅРѕРј РїРѕСЂСЏРґРєРµ
+template <typename T, typename V>
+std::ostream& operator<<(std::ostream& os, Node<T, V>* node) {
+    if (node) {
+        os << node->left.get();
+        os << ' ' << node->key;
+        /*
+        if (node->color == Color::Black) {
+            os << "* "; // С‡РµСЂРЅРѕРµ
+        } else {
+            os << "o "; // РєСЂР°СЃРЅРѕРµ
+        }
+        */
+        os << node->right.get();
+    }
+    return os;
+}
+
+// РњРѕР¶РЅРѕ СЂР°СЃРїРµС‡Р°С‚Р°С‚СЊ РґРµСЂРµРІРѕ С†РµР»РёРєРѕРј РІ РёРЅС„РёРєСЃРЅРѕРј РїРѕСЂСЏРґРєРµ
+template <typename T, typename V>
+std::ostream& operator<<(std::ostream& os, const RBTree<T, V>& tree) {
+    os << tree.root.get();
+    return os;
+}
+
+
+// РџСЂРёРјРµСЂ СЂР°Р±РѕС‚С‹
+/*
+int main() {
+
+    RBTree<int, int> tree;
+
+    for (int i=0; i<25; i++)
+        tree.insert({i, i});
+
+    std::cout << tree << '\n';
+
+    std::cout << (tree.find(10))->value << '\n';
+
+    for (int i=0; i<25; i++)
+        tree.erase(i);
+
+
+
+    return 0;
 }
 */
