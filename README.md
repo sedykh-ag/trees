@@ -28,8 +28,8 @@
 
 ### Красно-чёрное дерево
 
-#### insert
-
 ![insert](https://github.com/sedykh-ag/trees/blob/main/Profiler/RB_tre_insert.png)
 
 ![find](https://github.com/sedykh-ag/trees/blob/main/Profiler/RB_tree_find.png)
+
+![erase](https://github.com/sedykh-ag/trees/blob/main/Profiler/RB_tree_erase.png)
